@@ -2,6 +2,8 @@
 
 Smart pen application for NeoLab smart pens with real-time drawing visualization and OSC output.
 
+![AirSketch Screenshot](screenshot.png)
+
 ## Setup
 
 ```bash
