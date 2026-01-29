@@ -13,6 +13,7 @@
     "electron": "^40.0.0"
   },
   "dependencies": {
+    "osc": "^2.4.5",
     "web_pen_sdk": "^0.8.0"
   }
 }

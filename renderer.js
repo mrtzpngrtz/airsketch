@@ -11,6 +11,21 @@ if (require.extensions) {
 const PenHelper = require('web_pen_sdk/dist/PenCotroller/PenHelper').default;
 const PenMessageType = require('web_pen_sdk/dist/API/PenMessageType').default;
 const { ipcRenderer } = require('electron');
+const osc = require('osc');
+
+// OSC Setup
+const oscPort = new osc.UDPPort({
+    localAddress: "0.0.0.0",
+    localPort: 0, // Let OS choose
+    remoteAddress: "127.0.0.1",
+    remotePort: 9000,
+    metadata: true
+});
+
+oscPort.open();
+oscPort.on("ready", () => {
+    console.log("OSC ready - sending to 127.0.0.1:9000");
+});
 
 const connectBtn = document.getElementById('connectBtn');
 const zoomInBtn = document.getElementById('zoomInBtn');
@@ -350,6 +365,19 @@ PenHelper.dotCallback = (mac, dot) => {
 
     // Coordinates removed from UI for minimal design - available in console
     console.log(`Scale: ${scale.toFixed(2)}, ScreenXY: (${Math.round(screenX)}, ${Math.round(screenY)}), Canvas: (${canvas.width}, ${canvas.height})`);
+
+    // Send OSC coordinates (normalized 0-1)
+    const normalizedX = (dot.x - paperSize.Xmin) / Math.max(paperSize.width, 1);
+    const normalizedY = (dot.y - paperSize.Ymin) / Math.max(paperSize.height, 1);
+    
+    oscPort.send({
+        address: "/pen",
+        args: [
+            { type: "f", value: normalizedX },
+            { type: "f", value: normalizedY },
+            { type: "i", value: dot.dotType }
+        ]
+    });
 
     // Handle Current Stroke History
     if (dot.dotType === 0) { // Down
