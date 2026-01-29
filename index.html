@@ -12,17 +12,20 @@
     <div id="app">
         <header>
             <h1>airsketch</h1>
-            <div id="controls">
-                <button id="zoomOutBtn">−</button>
-                <button id="zoomInBtn">+</button>
-                <button id="rotateBtn">Rotate</button>
-                <button id="lockBoundsBtn">Lock</button>
-                <button id="clearBtn">Clear</button>
-            </div>
         </header>
         <main>
-            <div id="canvas-container">
-                <canvas id="penCanvas"></canvas>
+            <div class="canvas-wrapper">
+                <div id="canvas-container">
+                    <canvas id="penCanvas"></canvas>
+                    <div id="coordinates"></div>
+                </div>
+                <div id="controls">
+                    <button id="zoomInBtn">+</button>
+                    <button id="zoomOutBtn">−</button>
+                    <button id="rotateBtn">↻</button>
+                    <button id="lockBoundsBtn">Lock</button>
+                    <button id="clearBtn">Clear</button>
+                </div>
             </div>
             <div id="status-bar">
                 <div class="status-left">

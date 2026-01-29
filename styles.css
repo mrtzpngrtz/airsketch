@@ -22,7 +22,7 @@ header {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #333333;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     z-index: 10;
 }
@@ -36,10 +36,16 @@ h1 {
     text-transform: lowercase;
 }
 
+.canvas-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 #controls {
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
-    align-items: center;
 }
 
 #zoomOutBtn,
@@ -183,6 +189,18 @@ canvas {
     display: block;
     width: 100%;
     height: 100%;
+}
+
+#coordinates {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 300;
+    color: #666666;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    font-family: 'Courier New', monospace;
 }
 
 /* Device Picker Modal */

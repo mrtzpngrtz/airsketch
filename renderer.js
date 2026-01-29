@@ -38,6 +38,7 @@ const clearBtn = document.getElementById('clearBtn');
 const statusSpan = document.getElementById('status');
 const canvas = document.getElementById('penCanvas');
 const ctx = canvas.getContext('2d');
+const coordinatesDiv = document.getElementById('coordinates');
 
 let paperSize = { width: 0, height: 0, Xmin: 0, Ymin: 0 };
 let lastPoint = null;
@@ -365,7 +366,11 @@ PenHelper.dotCallback = (mac, dot) => {
     const screenX = (dot.x - paperSize.Xmin) * scale + ox;
     const screenY = (dot.y - paperSize.Ymin) * scale + oy;
 
-    // Coordinates removed from UI for minimal design - available in console
+    // Update coordinate display
+    const normalizedX = (dot.x - paperSize.Xmin) / Math.max(paperSize.width, 1);
+    const normalizedY = (dot.y - paperSize.Ymin) / Math.max(paperSize.height, 1);
+    coordinatesDiv.innerText = `x: ${normalizedX.toFixed(3)} y: ${normalizedY.toFixed(3)}`;
+    
     console.log(`Scale: ${scale.toFixed(2)}, ScreenXY: (${Math.round(screenX)}, ${Math.round(screenY)}), Canvas: (${canvas.width}, ${canvas.height})`);
 
     // Send OSC coordinates (normalized 0-1) if enabled
