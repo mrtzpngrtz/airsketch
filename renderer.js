@@ -40,7 +40,17 @@ const canvas = document.getElementById('penCanvas');
 const ctx = canvas.getContext('2d');
 const coordinatesDiv = document.getElementById('coordinates');
 
-let paperSize = { width: 0, height: 0, Xmin: 0, Ymin: 0 };
+// Fixed paper bounds based on actual pen coordinates
+// Upper Left: (0.01, 0.36), Upper Right: (0.7, 0.36)
+// Lower Left: (0.01, 0.95), Lower Right: (0.7, 0.95)
+let paperSize = { 
+    Xmin: 0.01, 
+    Xmax: 0.7, 
+    Ymin: 0.36, 
+    Ymax: 0.95, 
+    width: 0.69, 
+    height: 0.59 
+};
 let lastPoint = null;
 let isPenDown = false;
 let rotation = 0; // 0, 90, 180, 270
@@ -238,14 +248,22 @@ lockBoundsBtn.addEventListener('click', () => {
 // Clear button handler
 clearBtn.addEventListener('click', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    paperSize = { width: 0, height: 0, Xmin: 0, Ymin: 0 };
+    // Reset to fixed paper bounds
+    paperSize = { 
+        Xmin: 0.01, 
+        Xmax: 0.7, 
+        Ymin: 0.36, 
+        Ymax: 0.95, 
+        width: 0.69, 
+        height: 0.59 
+    };
     strokeHistory = [];
     currentStroke = null;
     boundsLocked = false;
     lockBoundsBtn.innerText = 'Lock';
     lockBoundsBtn.style.backgroundColor = '#000000';
     lockBoundsBtn.style.color = '#ffffff';
-    console.log('Canvas cleared');
+    console.log('Canvas cleared - reset to fixed bounds:', paperSize);
 });
 
 // Save last connected device
@@ -304,38 +322,23 @@ PenHelper.dotCallback = (mac, dot) => {
         return;
     }
 
-    // Dynamic paper bounds - expand to fit all drawing
+    // Optional: Dynamic paper bounds expansion (if pen draws outside fixed area)
     if (dot.x !== 0 && dot.y !== 0 && !boundsLocked) {
-        if (paperSize.width === 0) {
-            // First dot - initialize bounds to exactly match user's 60×90 drawing area
-            // 60mm width × 90mm height (portrait orientation)
-            const drawWidth = 60;
-            const drawHeight = 90;
-            paperSize.Xmin = dot.x - (drawWidth / 2);
-            paperSize.Xmax = dot.x + (drawWidth / 2);
-            paperSize.Ymin = dot.y - (drawHeight / 2);
-            paperSize.Ymax = dot.y + (drawHeight / 2);
-            paperSize.width = drawWidth;
-            paperSize.height = drawHeight;
-            console.log('Initialized paper bounds to 60×90:', paperSize);
-            redrawAll(); // Redraw after initializing bounds
-        } else {
-            // Expand bounds to include new dot
-            const padding = 2;
-            let changed = false;
+        // Optionally expand bounds to include new dot if outside the fixed area
+        const padding = 0.01;
+        let changed = false;
 
-            if (dot.x < paperSize.Xmin) { paperSize.Xmin = dot.x - padding; changed = true; }
-            if (dot.y < paperSize.Ymin) { paperSize.Ymin = dot.y - padding; changed = true; }
-            if (dot.x > paperSize.Xmax) { paperSize.Xmax = dot.x + padding; changed = true; }
-            if (dot.y > paperSize.Ymax) { paperSize.Ymax = dot.y + padding; changed = true; }
+        if (dot.x < paperSize.Xmin) { paperSize.Xmin = dot.x - padding; changed = true; }
+        if (dot.y < paperSize.Ymin) { paperSize.Ymin = dot.y - padding; changed = true; }
+        if (dot.x > paperSize.Xmax) { paperSize.Xmax = dot.x + padding; changed = true; }
+        if (dot.y > paperSize.Ymax) { paperSize.Ymax = dot.y + padding; changed = true; }
 
-            if (changed) {
-                paperSize.width = paperSize.Xmax - paperSize.Xmin;
-                paperSize.height = paperSize.Ymax - paperSize.Ymin;
-                console.log('Bounds expanded - rescaling canvas');
-                // If bounds changed, we must redraw everything at the new scale
-                redrawAll();
-            }
+        if (changed) {
+            paperSize.width = paperSize.Xmax - paperSize.Xmin;
+            paperSize.height = paperSize.Ymax - paperSize.Ymin;
+            console.log('Bounds expanded - rescaling canvas');
+            // If bounds changed, we must redraw everything at the new scale
+            redrawAll();
         }
     }
 
