@@ -14,17 +14,19 @@ const { ipcRenderer } = require('electron');
 const osc = require('osc');
 
 // OSC Setup
+let oscEnabled = false;
+let oscRemotePort = 9000;
 const oscPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
-    localPort: 0, // Let OS choose
+    localPort: 0,
     remoteAddress: "127.0.0.1",
-    remotePort: 9000,
+    remotePort: oscRemotePort,
     metadata: true
 });
 
 oscPort.open();
 oscPort.on("ready", () => {
-    console.log("OSC ready - sending to 127.0.0.1:9000");
+    console.log("OSC initialized - use toggle to enable");
 });
 
 const connectBtn = document.getElementById('connectBtn');
@@ -366,18 +368,20 @@ PenHelper.dotCallback = (mac, dot) => {
     // Coordinates removed from UI for minimal design - available in console
     console.log(`Scale: ${scale.toFixed(2)}, ScreenXY: (${Math.round(screenX)}, ${Math.round(screenY)}), Canvas: (${canvas.width}, ${canvas.height})`);
 
-    // Send OSC coordinates (normalized 0-1)
-    const normalizedX = (dot.x - paperSize.Xmin) / Math.max(paperSize.width, 1);
-    const normalizedY = (dot.y - paperSize.Ymin) / Math.max(paperSize.height, 1);
-    
-    oscPort.send({
-        address: "/pen",
-        args: [
-            { type: "f", value: normalizedX },
-            { type: "f", value: normalizedY },
-            { type: "i", value: dot.dotType }
-        ]
-    });
+    // Send OSC coordinates (normalized 0-1) if enabled
+    if (oscEnabled) {
+        const normalizedX = (dot.x - paperSize.Xmin) / Math.max(paperSize.width, 1);
+        const normalizedY = (dot.y - paperSize.Ymin) / Math.max(paperSize.height, 1);
+        
+        oscPort.send({
+            address: "/pen",
+            args: [
+                { type: "f", value: normalizedX },
+                { type: "f", value: normalizedY },
+                { type: "i", value: dot.dotType }
+            ]
+        });
+    }
 
     // Handle Current Stroke History
     if (dot.dotType === 0) { // Down
@@ -515,3 +519,28 @@ function showDevicePicker(devices) {
     };
     picker.appendChild(cancelBtn);
 }
+
+// OSC Controls
+const oscPortInput = document.getElementById('oscPort');
+const oscToggleBtn = document.getElementById('oscToggle');
+
+oscToggleBtn.addEventListener('click', () => {
+    oscEnabled = !oscEnabled;
+    oscToggleBtn.innerText = oscEnabled ? 'ON' : 'OFF';
+    oscToggleBtn.style.backgroundColor = oscEnabled ? '#ffffff' : '#000000';
+    oscToggleBtn.style.color = oscEnabled ? '#000000' : '#ffffff';
+    console.log(`OSC ${oscEnabled ? 'enabled' : 'disabled'}`);
+});
+
+oscPortInput.addEventListener('change', () => {
+    const newPort = parseInt(oscPortInput.value);
+    if (newPort >= 1024 && newPort <= 65535) {
+        oscRemotePort = newPort;
+        oscPort.close();
+        oscPort.options.remotePort = oscRemotePort;
+        oscPort.open();
+        console.log('OSC port changed to:', oscRemotePort);
+    } else {
+        oscPortInput.value = oscRemotePort;
+    }
+});
