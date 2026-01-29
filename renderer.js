@@ -259,19 +259,13 @@ function getLastDevice() {
     return localStorage.getItem('lastPenMac');
 }
 
-// Auto reconnect on startup
+// Auto reconnect on startup - removed due to Bluetooth security requirements
+// Web Bluetooth requires user gesture to request device access
 window.addEventListener('load', () => {
     const lastMac = getLastDevice();
     if (lastMac) {
-        console.log('Attempting auto-reconnect to last pen:', lastMac);
-        statusSpan.innerText = "Reconnecting...";
-        // Wait a bit for SDK to initialize
-        setTimeout(() => {
-            PenHelper.scanPen().catch(err => {
-                console.log('Auto-reconnect failed:', err);
-                statusSpan.innerText = "Disconnected";
-            });
-        }, 1000);
+        console.log('Last connected device:', lastMac);
+        statusSpan.innerText = "Click Connect to reconnect";
     }
 });
 
