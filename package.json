@@ -1,0 +1,18 @@
+{
+  "name": "2026_01_smartpenapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^40.0.0"
+  },
+  "dependencies": {
+    "web_pen_sdk": "^0.8.0"
+  }
+}

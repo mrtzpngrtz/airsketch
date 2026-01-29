@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
+
+html,
+body {
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-weight: 300;
+}
+
+header {
+    background-color: #000000;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #333333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+h1 {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #ffffff;
+    letter-spacing: 0.15em;
+    text-transform: lowercase;
+}
+
+#controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#zoomOutBtn,
+#zoomInBtn {
+    font-size: 1.2rem;
+    padding: 0.25rem 0.75rem;
+    line-height: 1;
+}
+
+button {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid #ffffff;
+    border-radius: 0;
+    background-color: #000000;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+button:hover {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+button:disabled {
+    background-color: #000000;
+    color: #333333;
+    border-color: #333333;
+    cursor: not-allowed;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding: 1.5rem;
+    padding-bottom: 0;
+    background-color: #000000;
+}
+
+#status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.5rem;
+    background-color: transparent;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#status {
+    font-weight: 300;
+    color: #666666;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+}
+
+#zoom-info {
+    font-weight: 300;
+    color: #666666;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+}
+
+#canvas-container {
+    background-color: #000000;
+    box-shadow: none;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 148 / 210;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border: 1px solid #333333;
+    margin: auto;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Device Picker Modal */
+#device-picker {
+    font-family: 'Inter', sans-serif;
+    background-color: #000000 !important;
+    border: 1px solid #ffffff !important;
+    color: #ffffff !important;
+    border-radius: 0;
+}
+
+#device-picker h3 {
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #ffffff;
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+#device-picker p {
+    color: #999999;
+    font-size: 0.75rem;
+    font-weight: 300;
+}
+
+#device-picker ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+#device-picker ul li {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #333333 !important;
+    border-bottom: 1px solid #333333 !important;
+    font-size: 0.7rem;
+    padding: 0.75rem !important;
+    transition: all 0.15s ease;
+    font-weight: 300;
+    cursor: pointer;
+}
+
+#device-picker ul li:hover {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+#device-picker button {
+    background-color: #000000;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    font-size: 0.7rem;
+    padding: 0.5rem 1rem;
+    margin-top: 0.5rem;
+}
+
+#device-picker button:hover {
+    background-color: #ffffff;
+    color: #000000;
+}

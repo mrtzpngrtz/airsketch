@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>airsketch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>airsketch</h1>
+            <div id="controls">
+                <button id="connectBtn">Connect</button>
+                <button id="zoomOutBtn">−</button>
+                <button id="zoomInBtn">+</button>
+                <button id="rotateBtn">Rotate</button>
+                <button id="lockBoundsBtn">Lock</button>
+                <button id="clearBtn">Clear</button>
+            </div>
+        </header>
+        <main>
+            <div id="canvas-container">
+                <canvas id="penCanvas"></canvas>
+            </div>
+            <div id="status-bar">
+                <span id="status">Disconnected</span>
+                <span id="zoom-info">100%</span>
+            </div>
+        </main>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+
+</html>
