@@ -13,7 +13,6 @@
         <header>
             <h1>airsketch</h1>
             <div id="controls">
-                <button id="connectBtn">Connect</button>
                 <button id="zoomOutBtn">−</button>
                 <button id="zoomInBtn">+</button>
                 <button id="rotateBtn">Rotate</button>
@@ -26,11 +25,16 @@
                 <canvas id="penCanvas"></canvas>
             </div>
             <div id="status-bar">
-                <span id="status">Disconnected</span>
-                <span id="zoom-info">100%</span>
+                <div class="status-left">
+                    <button id="connectBtn">Connect</button>
+                </div>
+                <div class="status-center">
+                    <span id="status">Disconnected</span>
+                    <span id="zoom-info">100%</span>
+                </div>
                 <div id="osc-controls">
-                    <span>OSC:</span>
-                    <input type="number" id="oscPort" value="9000" min="1024" max="65535" style="width: 60px;">
+                    <span class="osc-label">OSC:</span>
+                    <input type="number" id="oscPort" value="9000" min="1024" max="65535">
                     <button id="oscToggle">OFF</button>
                 </div>
             </div>

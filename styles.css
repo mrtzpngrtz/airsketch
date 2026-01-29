@@ -82,9 +82,9 @@ main {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
     padding: 1.5rem;
-    padding-bottom: 0;
+    padding-bottom: 4rem;
     background-color: #000000;
 }
 
@@ -98,6 +98,17 @@ main {
     z-index: 10;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+}
+
+.status-left {
+    display: flex;
+    align-items: center;
+}
+
+.status-center {
+    display: flex;
+    gap: 2rem;
     align-items: center;
 }
 
@@ -115,6 +126,43 @@ main {
     text-transform: lowercase;
     letter-spacing: 0.05em;
     font-size: 0.65rem;
+}
+
+#osc-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.osc-label {
+    font-weight: 300;
+    color: #666666;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+    font-size: 0.65rem;
+}
+
+#oscPort {
+    width: 60px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #ffffff;
+    border-radius: 0;
+    background-color: #000000;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    text-align: center;
+}
+
+#oscPort:focus {
+    outline: none;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+#oscToggle {
+    min-width: 50px;
 }
 
 #canvas-container {

@@ -527,8 +527,13 @@ const oscToggleBtn = document.getElementById('oscToggle');
 oscToggleBtn.addEventListener('click', () => {
     oscEnabled = !oscEnabled;
     oscToggleBtn.innerText = oscEnabled ? 'ON' : 'OFF';
-    oscToggleBtn.style.backgroundColor = oscEnabled ? '#ffffff' : '#000000';
-    oscToggleBtn.style.color = oscEnabled ? '#000000' : '#ffffff';
+    if (oscEnabled) {
+        oscToggleBtn.style.backgroundColor = '#ffffff';
+        oscToggleBtn.style.color = '#000000';
+    } else {
+        oscToggleBtn.style.backgroundColor = '';
+        oscToggleBtn.style.color = '';
+    }
     console.log(`OSC ${oscEnabled ? 'enabled' : 'disabled'}`);
 });
 
