@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# SDK reference (use npm package instead)
+sdk_temp/
+
 # Build outputs
 dist/
 build/
