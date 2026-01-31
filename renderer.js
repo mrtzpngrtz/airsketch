@@ -13,9 +13,16 @@ const PenMessageType = require('web_pen_sdk/dist/API/PenMessageType').default;
 const { ipcRenderer } = require('electron');
 const osc = require('osc');
 
-// OSC Setup
+// Settings
 let oscEnabled = false;
 let oscRemotePort = 9000;
+let autoReconnectEnabled = false;
+let lastConnectedMac = null;
+let reconnectAttempts = 0;
+let maxReconnectAttempts = 3;
+let reconnectTimeout = null;
+
+// OSC Setup
 const oscPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
     localPort: 0,
@@ -29,12 +36,44 @@ oscPort.on("ready", () => {
     console.log("OSC initialized - use toggle to enable");
 });
 
+// Load settings from localStorage
+function loadSettings() {
+    const savedOscEnabled = localStorage.getItem('oscEnabled');
+    const savedOscPort = localStorage.getItem('oscPort');
+    const savedAutoReconnect = localStorage.getItem('autoReconnect');
+    
+    if (savedOscEnabled !== null) {
+        oscEnabled = savedOscEnabled === 'true';
+    }
+    if (savedOscPort !== null) {
+        oscRemotePort = parseInt(savedOscPort);
+    }
+    if (savedAutoReconnect !== null) {
+        autoReconnectEnabled = savedAutoReconnect === 'true';
+    }
+    
+    console.log('Settings loaded:', { oscEnabled, oscRemotePort, autoReconnectEnabled });
+}
+
+// Save settings to localStorage
+function saveSettings() {
+    localStorage.setItem('oscEnabled', oscEnabled);
+    localStorage.setItem('oscPort', oscRemotePort);
+    localStorage.setItem('autoReconnect', autoReconnectEnabled);
+    console.log('Settings saved');
+}
+
+// Load settings on startup
+loadSettings();
+
 const connectBtn = document.getElementById('connectBtn');
 const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 const rotateBtn = document.getElementById('rotateBtn');
 const lockBoundsBtn = document.getElementById('lockBoundsBtn');
 const clearBtn = document.getElementById('clearBtn');
+const exportPngBtn = document.getElementById('exportPngBtn');
+const exportEpsBtn = document.getElementById('exportEpsBtn');
 const statusSpan = document.getElementById('status');
 const canvas = document.getElementById('penCanvas');
 const ctx = canvas.getContext('2d');
@@ -142,17 +181,21 @@ connectBtn.addEventListener('click', async () => {
 
     if (!navigator.bluetooth) {
         console.error("Web Bluetooth is not available in this environment!");
-        statusSpan.innerText = "Web Bluetooth Unavailable (Check DevTools)";
+        statusSpan.innerText = "Web Bluetooth Unavailable";
         return;
     }
 
     try {
+        connectBtn.innerText = "Connecting...";
+        connectBtn.disabled = true;
         console.log("Calling PenHelper.scanPen()...");
         await PenHelper.scanPen();
         console.log("PenHelper.scanPen() called.");
     } catch (e) {
         console.error("Connection failed or cancelled:", e);
-        statusSpan.innerText = "Connection Failed: " + e.message;
+        statusSpan.innerText = "Connection Failed";
+        connectBtn.innerText = "Connect";
+        connectBtn.disabled = false;
     }
 });
 
@@ -165,7 +208,7 @@ function applyCanvasTransform() {
     // Update zoom info display
     const zoomInfo = document.getElementById('zoom-info');
     if (zoomInfo) {
-        zoomInfo.innerText = `${Math.round(canvasZoom * 100)}%`;
+        zoomInfo.innerText = `Zoom: ${Math.round(canvasZoom * 100)}%`;
     }
     
     console.log('Canvas zoom:', canvasZoom.toFixed(2), 'Pan:', panX.toFixed(0), panY.toFixed(0));
@@ -240,8 +283,11 @@ rotateBtn.addEventListener('click', () => {
 lockBoundsBtn.addEventListener('click', () => {
     boundsLocked = !boundsLocked;
     lockBoundsBtn.innerText = boundsLocked ? 'Unlock' : 'Lock';
-    lockBoundsBtn.style.backgroundColor = boundsLocked ? '#ffffff' : '#000000';
-    lockBoundsBtn.style.color = boundsLocked ? '#000000' : '#ffffff';
+    if (boundsLocked) {
+        lockBoundsBtn.classList.add('locked');
+    } else {
+        lockBoundsBtn.classList.remove('locked');
+    }
     console.log(`Bounds ${boundsLocked ? 'locked' : 'unlocked'} at:`, paperSize);
 });
 
@@ -261,8 +307,7 @@ clearBtn.addEventListener('click', () => {
     currentStroke = null;
     boundsLocked = false;
     lockBoundsBtn.innerText = 'Lock';
-    lockBoundsBtn.style.backgroundColor = '#000000';
-    lockBoundsBtn.style.color = '#ffffff';
+    lockBoundsBtn.classList.remove('locked');
     console.log('Canvas cleared - reset to fixed bounds:', paperSize);
 });
 
@@ -292,15 +337,30 @@ PenHelper.messageCallback = (mac, type, args) => {
     console.log(`Message from ${mac}: type=${type}`, args);
     switch (type) {
         case PenMessageType.PEN_CONNECTION_SUCCESS:
-            statusSpan.innerText = "Connected";
+            connectBtn.innerText = "Connected";
             connectBtn.disabled = true;
+            statusSpan.innerText = "";
             lastPoint = null;
             isPenDown = false;
+            lastConnectedMac = mac;
+            reconnectAttempts = 0; // Reset reconnect attempts on successful connection
             saveLastDevice(mac); // Save for auto-reconnect
+            
+            // Clear any pending reconnect timeout
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = null;
+            }
+            console.log('Connected to pen:', mac);
             break;
         case PenMessageType.PEN_DISCONNECTED:
-            statusSpan.innerText = "Disconnected";
+            connectBtn.innerText = "Connect";
             connectBtn.disabled = false;
+            statusSpan.innerText = "Disconnected - Click Connect to reconnect";
+            console.log('Pen disconnected');
+            
+            // Note: Auto-reconnect cannot work due to Web Bluetooth security requirements
+            // User must manually click Connect button to reconnect
             break;
         case PenMessageType.PEN_SETTING_INFO:
             // Battery info removed from UI for minimal design
@@ -522,23 +582,45 @@ function showDevicePicker(devices) {
     picker.appendChild(cancelBtn);
 }
 
-// OSC Controls
+// Settings Modal
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const oscToggleCheckbox = document.getElementById('oscToggle');
 const oscPortInput = document.getElementById('oscPort');
-const oscToggleBtn = document.getElementById('oscToggle');
 
-oscToggleBtn.addEventListener('click', () => {
-    oscEnabled = !oscEnabled;
-    oscToggleBtn.innerText = oscEnabled ? 'ON' : 'OFF';
-    if (oscEnabled) {
-        oscToggleBtn.style.backgroundColor = '#ffffff';
-        oscToggleBtn.style.color = '#000000';
-    } else {
-        oscToggleBtn.style.backgroundColor = '';
-        oscToggleBtn.style.color = '';
+// Initialize settings UI
+function updateSettingsUI() {
+    oscToggleCheckbox.checked = oscEnabled;
+    oscPortInput.value = oscRemotePort;
+}
+
+// Open settings modal
+settingsBtn.addEventListener('click', () => {
+    updateSettingsUI();
+    settingsModal.classList.remove('hidden');
+});
+
+// Close settings modal
+closeSettingsBtn.addEventListener('click', () => {
+    settingsModal.classList.add('hidden');
+});
+
+// Close modal when clicking outside
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        settingsModal.classList.add('hidden');
     }
+});
+
+// OSC Toggle
+oscToggleCheckbox.addEventListener('change', () => {
+    oscEnabled = oscToggleCheckbox.checked;
+    saveSettings();
     console.log(`OSC ${oscEnabled ? 'enabled' : 'disabled'}`);
 });
 
+// OSC Port
 oscPortInput.addEventListener('change', () => {
     const newPort = parseInt(oscPortInput.value);
     if (newPort >= 1024 && newPort <= 65535) {
@@ -546,8 +628,175 @@ oscPortInput.addEventListener('change', () => {
         oscPort.close();
         oscPort.options.remotePort = oscRemotePort;
         oscPort.open();
+        saveSettings();
         console.log('OSC port changed to:', oscRemotePort);
     } else {
         oscPortInput.value = oscRemotePort;
+    }
+});
+
+// Initialize settings UI on load
+updateSettingsUI();
+
+// Export PNG button handler
+exportPngBtn.addEventListener('click', () => {
+    try {
+        // Create a temporary canvas with white background for export
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d');
+        
+        // Fill with white background
+        exportCtx.fillStyle = '#ffffff';
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        
+        // Draw all strokes on white background with black color
+        strokeHistory.forEach(stroke => {
+            if (!stroke.points || stroke.points.length === 0) return;
+            
+            const view = { width: exportCanvas.width, height: exportCanvas.height };
+            const p = 0.01;
+            const uw = view.width * (1 - 2 * p);
+            const uh = view.height * (1 - 2 * p);
+            const pw = Math.max(paperSize.width, 1);
+            const ph = Math.max(paperSize.height, 1);
+            const scaleX = uw / pw;
+            const scaleY = uh / ph;
+            const scale = Math.min(scaleX, scaleY);
+            const sw = pw * scale;
+            const sh = ph * scale;
+            const ox = (view.width - sw) / 2;
+            const oy = (view.height - sh) / 2;
+            
+            exportCtx.lineWidth = 2 * (exportCanvas.width / 1000);
+            exportCtx.strokeStyle = '#000000'; // Black strokes for white background
+            exportCtx.fillStyle = '#000000';
+            exportCtx.shadowBlur = 0;
+            exportCtx.shadowColor = 'transparent';
+            exportCtx.lineCap = 'round';
+            exportCtx.lineJoin = 'round';
+            
+            exportCtx.beginPath();
+            stroke.points.forEach((dot, index) => {
+                const sx = (dot.x - paperSize.Xmin) * scale + ox;
+                const sy = (dot.y - paperSize.Ymin) * scale + oy;
+                
+                if (index === 0) {
+                    exportCtx.moveTo(sx, sy);
+                } else {
+                    exportCtx.lineTo(sx, sy);
+                }
+            });
+            exportCtx.stroke();
+        });
+        
+        // Export as PNG
+        const dataUrl = exportCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `airsketch_${timestamp}.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        console.log('Canvas exported as PNG');
+        statusSpan.innerText = 'Exported as PNG';
+        setTimeout(() => { statusSpan.innerText = ''; }, 2000);
+    } catch (error) {
+        console.error('PNG export failed:', error);
+        statusSpan.innerText = 'PNG export failed';
+        setTimeout(() => { statusSpan.innerText = ''; }, 2000);
+    }
+});
+
+// Export EPS button handler
+exportEpsBtn.addEventListener('click', () => {
+    try {
+        if (strokeHistory.length === 0) {
+            statusSpan.innerText = 'Nothing to export';
+            setTimeout(() => { statusSpan.innerText = ''; }, 2000);
+            return;
+        }
+        
+        // Calculate bounding box for EPS
+        const view = { width: canvas.width, height: canvas.height };
+        const p = 0.01;
+        const uw = view.width * (1 - 2 * p);
+        const uh = view.height * (1 - 2 * p);
+        const pw = Math.max(paperSize.width, 1);
+        const ph = Math.max(paperSize.height, 1);
+        const scaleX = uw / pw;
+        const scaleY = uh / ph;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // EPS uses PostScript points (72 points per inch)
+        // We'll use a standard page size (A4: 595x842 points)
+        const epsWidth = 595;
+        const epsHeight = 842;
+        const epsScale = Math.min(epsWidth / canvas.width, epsHeight / canvas.height) * 0.9; // 90% of page
+        
+        // Build EPS file
+        let eps = '%!PS-Adobe-3.0 EPSF-3.0\n';
+        eps += `%%BoundingBox: 0 0 ${epsWidth} ${epsHeight}\n`;
+        eps += '%%Creator: airsketch\n';
+        eps += `%%CreationDate: ${new Date().toISOString()}\n`;
+        eps += '%%Pages: 1\n';
+        eps += '%%EndComments\n\n';
+        
+        // PostScript setup
+        eps += '%%BeginProlog\n';
+        eps += '/m {moveto} def\n';
+        eps += '/l {lineto} def\n';
+        eps += '/s {stroke} def\n';
+        eps += '%%EndProlog\n\n';
+        
+        eps += '%%Page: 1 1\n';
+        eps += 'gsave\n';
+        eps += '1 setlinecap\n'; // Round cap
+        eps += '1 setlinejoin\n'; // Round join
+        eps += `${2 * epsScale} setlinewidth\n`;
+        
+        // Draw each stroke
+        strokeHistory.forEach(stroke => {
+            if (!stroke.points || stroke.points.length === 0) return;
+            
+            eps += 'newpath\n';
+            
+            stroke.points.forEach((dot, index) => {
+                const sx = (dot.x - paperSize.Xmin) * scale * epsScale;
+                // Flip Y axis for PostScript (origin at bottom-left)
+                const sy = epsHeight - ((dot.y - paperSize.Ymin) * scale * epsScale);
+                
+                if (index === 0) {
+                    eps += `${sx.toFixed(2)} ${sy.toFixed(2)} m\n`;
+                } else {
+                    eps += `${sx.toFixed(2)} ${sy.toFixed(2)} l\n`;
+                }
+            });
+            
+            eps += 's\n';
+        });
+        
+        eps += 'grestore\n';
+        eps += 'showpage\n';
+        eps += '%%EOF\n';
+        
+        // Download EPS file
+        const blob = new Blob([eps], { type: 'application/postscript' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `airsketch_${timestamp}.eps`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        console.log('Canvas exported as EPS');
+        statusSpan.innerText = 'Exported as EPS';
+        setTimeout(() => { statusSpan.innerText = ''; }, 2000);
+    } catch (error) {
+        console.error('EPS export failed:', error);
+        statusSpan.innerText = 'EPS export failed';
+        setTimeout(() => { statusSpan.innerText = ''; }, 2000);
     }
 });

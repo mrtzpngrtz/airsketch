@@ -17,7 +17,6 @@
             <div class="canvas-wrapper">
                 <div id="canvas-container">
                     <canvas id="penCanvas"></canvas>
-                    <div id="coordinates"></div>
                 </div>
                 <div id="controls">
                     <button id="zoomInBtn">+</button>
@@ -25,6 +24,8 @@
                     <button id="rotateBtn">↻</button>
                     <button id="lockBoundsBtn">Lock</button>
                     <button id="clearBtn">Clear</button>
+                    <button id="exportPngBtn">PNG</button>
+                    <button id="exportEpsBtn">EPS</button>
                 </div>
             </div>
             <div id="status-bar">
@@ -32,13 +33,35 @@
                     <button id="connectBtn">Connect</button>
                 </div>
                 <div class="status-center">
-                    <span id="status">Disconnected</span>
-                    <span id="zoom-info">100%</span>
+                    <span id="zoom-info">Zoom: 100%</span>
+                    <span id="coordinates">Coordinates: --</span>
+                    <span id="status"></span>
                 </div>
-                <div id="osc-controls">
-                    <span class="osc-label">OSC:</span>
-                    <input type="number" id="oscPort" value="9000" min="1024" max="65535">
-                    <button id="oscToggle">OFF</button>
+                <div class="status-right">
+                    <button id="settingsBtn">⚙</button>
+                </div>
+            </div>
+            
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Settings</h2>
+                        <button id="closeSettingsBtn" class="close-btn">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="setting-group">
+                            <h3>OSC Output</h3>
+                            <label class="setting-item">
+                                <input type="checkbox" id="oscToggle">
+                                <span>Enable OSC</span>
+                            </label>
+                            <label class="setting-item">
+                                <span class="setting-label">Port:</span>
+                                <input type="number" id="oscPort" value="9000" min="1024" max="65535">
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
